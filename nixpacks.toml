@@ -1,11 +1,14 @@
 [phases.setup]
-nixPkgs = ["nodejs_24", "yarn"]
+nixPkgs = ["nodejs_22", "yarn"]
+
+[phases.install]
+cmds = ["yarn install --frozen-lockfile --ignore-engines"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["yarn run build"]
 
 [start]
-cmd = "npm run start"
+cmd = "yarn run start"
 
 [variables]
 NODE_ENV = "production"
