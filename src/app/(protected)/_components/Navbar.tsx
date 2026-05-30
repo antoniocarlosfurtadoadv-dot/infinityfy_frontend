@@ -41,11 +41,9 @@ export function Navbar({ user }: INavbarProps) {
     [user],
   );
 
-  const userRoleType = user?.roleProfile?.type ?? null;
-
   const sidebar = useMemo(() => {
-    return buildSidebar(userPermissions, userRoleType);
-  }, [userPermissions, userRoleType]);
+    return buildSidebar(userPermissions);
+  }, [userPermissions]);
 
   const mobileUpperLinks = sidebar.upper;
 
@@ -176,7 +174,7 @@ export function Navbar({ user }: INavbarProps) {
             <div className="hidden lg:flex flex-col items-start">
               <p className="text-sm font-bold text-neutral-950">{user.name}</p>
               <p className="text-xs text-neutral-700 font-medium">
-                {user.roleProfile?.name ?? user?.roleProfile?.type}
+                {user.roleProfile?.name}
               </p>
             </div>
           </button>

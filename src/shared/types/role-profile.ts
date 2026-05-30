@@ -10,5 +10,4 @@ export interface IRoleProfile extends IBaseEntity {
   description?: string;
   userId: string;
   users?: IUser[];
-  type: "MASTER" | "VETERINARIAN" | "LABORATORY" | "MOTOBOY";
 }

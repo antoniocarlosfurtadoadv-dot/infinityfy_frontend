@@ -81,7 +81,7 @@ export function ProfileDetails() {
                 )}
               </div>
               <p className="text-sm text-neutral-700">
-                {profile.roleProfile?.name ?? profile.roleProfile?.type}
+                {profile.roleProfile?.name}
               </p>
             </div>
           </div>

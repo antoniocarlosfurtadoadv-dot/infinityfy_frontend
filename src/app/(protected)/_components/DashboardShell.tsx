@@ -34,7 +34,6 @@ function DashboardShellInner({ children }: IDashboardShellProps) {
     () => user?.roleProfile?.defaultPermissions ?? [],
     [user],
   );
-  const userRoleType = user?.roleProfile?.type ?? null;
 
   const sidebar = useMemo(() => {
     if (!user) {
@@ -44,8 +43,8 @@ function DashboardShellInner({ children }: IDashboardShellProps) {
       };
     }
 
-    return buildSidebar(userPermissions, userRoleType);
-  }, [user, userPermissions, userRoleType]);
+    return buildSidebar(userPermissions);
+  }, [user, userPermissions]);
 
   const handleLogout = () => {
     logout();

@@ -4,9 +4,6 @@ import type { ReactNode } from "react";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X, ChevronDown, Check, SlidersHorizontal, Search } from "lucide-react";
-import { Modal } from "./ui/Modal";
-import { Input } from "./ui/Input";
-import { Button } from "./ui/Button";
 
 interface IFilterOption {
   value: string;
@@ -81,9 +78,7 @@ function MultiSelect({
               ? selectedLabels.join(", ")
               : `${selectedLabels.length} selecionados`}
         </span>
-        <ChevronDown
-          className={`ml-2 h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`ml-2 h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -98,11 +93,10 @@ function MultiSelect({
                 className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
               >
                 <span
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                    isSelected
-                      ? "border-indigo-500 bg-indigo-500 text-white"
-                      : "border-slate-300"
-                  }`}
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${isSelected
+                    ? "border-indigo-500 bg-indigo-500 text-white"
+                    : "border-slate-300"
+                    }`}
                 >
                   {isSelected && <Check className="h-3 w-3" />}
                 </span>
@@ -118,41 +112,24 @@ function MultiSelect({
 
 interface IFilterProps {
   fields: IFilterField[];
-  desktopFields?: IFilterField[];
-  mobileFields?: IFilterField[];
-  desktopSearchPlaceholder?: string;
+  showNameFilter?: boolean;
+  namePlaceholder?: string;
   onSubmit?: (values: Record<string, string>) => void;
 }
 
-export function Filter({
-  fields,
-  desktopFields: desktopFieldsProp,
-  mobileFields: mobileFieldsProp,
-  desktopSearchPlaceholder,
-  onSubmit,
-}: IFilterProps) {
+export function Filter({ fields, showNameFilter, namePlaceholder, onSubmit }: IFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const [mobileModalOpen, setMobileModalOpen] = useState(false);
-  const desktopFields = desktopFieldsProp ?? fields;
-  const mobileFields = mobileFieldsProp ?? fields;
-
-  const allFieldNames = Array.from(
-    new Set(
-      [
-        ...fields,
-        ...desktopFields,
-        ...(mobileFieldsProp ? mobileFieldsProp : []),
-      ].map((field) => field.name),
-    ),
-  );
+  const [isOpen, setIsOpen] = useState(true);
 
   // Initialize state from URL params
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initialValues: Record<string, string> = {};
-    allFieldNames.forEach((fieldName) => {
-      initialValues[fieldName] = searchParams.get(fieldName) ?? "";
+    if (showNameFilter) {
+      initialValues["name"] = searchParams.get("name") ?? "";
+    }
+    fields.forEach((field) => {
+      initialValues[field.name] = searchParams.get(field.name) ?? "";
     });
     return initialValues;
   });
@@ -174,8 +151,11 @@ export function Filter({
 
   const handleClear = () => {
     const clearedValues: Record<string, string> = {};
-    allFieldNames.forEach((fieldName) => {
-      clearedValues[fieldName] = "";
+    if (showNameFilter) {
+      clearedValues["name"] = "";
+    }
+    fields.forEach((field) => {
+      clearedValues[field.name] = "";
     });
     setValues(clearedValues);
     if (onSubmit) {
@@ -197,218 +177,111 @@ export function Filter({
 
   const hasActiveFilters = Object.values(values).some((value) => value !== "");
 
-  const searchField = fields.find((f) => f.name === "search");
-  const searchPlaceholder =
-    searchField?.placeholder ?? "Requisições, pacientes...";
-
-  const desktopSearchLabel =
-    desktopSearchPlaceholder ?? "Buscar por requisição, paciente...";
-
-  const renderFieldControl = (field: IFilterField) => {
-    if (field.type === "select") {
-      return (
-        <select
-          value={values[field.name]}
-          onChange={(e) => handleChange(field.name, e.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-        >
-          <option value="" className="text-slate-500">
-            {field.placeholder ?? "Selecione..."}
-          </option>
-          {field.options?.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    if (field.type === "multiselect") {
-      return (
-        <MultiSelect
-          value={values[field.name] ?? ""}
-          options={field.options?.filter((o) => o.value !== "") ?? []}
-          placeholder={field.placeholder}
-          onChange={(value) => handleChange(field.name, value)}
-        />
-      );
-    }
-
-    if (field.type === "custom" && field.renderCustom) {
-      return field.renderCustom({
-        value: values[field.name] ?? "",
-        onChange: (value) => handleChange(field.name, value),
-      });
-    }
-
-    return (
-      <input
-        type={field.type ?? "text"}
-        placeholder={field.placeholder}
-        value={values[field.name]}
-        onChange={(e) => handleChange(field.name, e.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-      />
-    );
-  };
-
   return (
-    <div className=" bg-white overflow-hidden border-b border-neutral-300 md:border-none lg:bg-transparent">
-      {/* Mobile: compact search input with filter button (mobile only) */}
-      <div className="px-4 py-4 lg:hidden">
-        <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
-          <Input
-            type="text"
-            aria-label="Buscar requisições"
-            placeholder={searchPlaceholder}
-            value={values["search"]}
-            onChange={(e) => handleChange("search", e.target.value)}
-            leftIcon={<Search size={22} />}
-            inputSize="sm"
-            className="h-auto border-0 bg-transparent text-sm shadow-none focus:border-0 focus:shadow-none focus:ring-0"
-          />
-          <button
-            type="button"
-            onClick={() => setMobileModalOpen(true)}
-            aria-label="Abrir filtros"
-            className="relative flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-50"
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-            {hasActiveFilters && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white">
-                {Object.values(values).filter((v) => v !== "").length}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div className="hidden lg:block rounded-lg border border-neutral-200 bg-white p-6 ">
-        <div className="flex gap-4 items-end justify-between w-full">
-          <div className="lg:w-100  xl:w-102 ">
-            <Input
-              type="text"
-              aria-label="Buscar por requisição, paciente"
-              placeholder={desktopSearchLabel}
-              value={values.search}
-              onChange={(e) => handleChange("search", e.target.value)}
-              leftIcon={<Search size={22} />}
-              inputSize="md"
-              className="h-11 w-full xl:w-[415px] border-slate-300 bg-white text-sm shadow-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-            />
-          </div>
-
-          <div className="flex flex-row items-end gap-4 xl:flex-wrap">
-            {desktopFields.map((field) => (
-              <div key={field.name} className=" w-full xl:w-52">
-                {field.label && (
-                  <label className="mb-2 block text-sm font-semibold text-slate-900">
-                    {field.label}
-                  </label>
-                )}
-                {renderFieldControl(field)}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile: filters in bottom sheet modal */}
-      <Modal
-        isOpen={mobileModalOpen}
-        onClose={() => setMobileModalOpen(false)}
-        title=""
-        variant="sheet"
-        size="md"
-        showCloseButton={false}
-        contentClassName="p-4"
-        bodyClassName="w-full"
+    <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between px-6 py-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
       >
-        <div className="w-full mt-2">
-          <div className="mb-4">
+        <span className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+          Filtros
+          {hasActiveFilters && (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white">
+              {Object.values(values).filter((v) => v !== "").length}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-feedback-purple-main text-white">
-                  <SlidersHorizontal className="h-5 w-5" />
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-4 px-6 pb-6 lg:flex-row lg:items-end lg:justify-between">
+            {showNameFilter && (
+              <div className="w-full lg:w-64 xl:w-80 shrink-0">
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Nome
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder={namePlaceholder ?? "Buscar por nome..."}
+                    value={values["name"] ?? ""}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 pl-9 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                  />
                 </div>
-
-                <h3 className="text-base font-semibold text-slate-950">
-                  Filtros
-                </h3>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setMobileModalOpen(false)}
-                aria-label="Fechar filtros"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-neutral-950 hover:bg-slate-50"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {mobileFieldsProp ? (
-            <div className="flex flex-col gap-4">
-              {mobileFields.map((field) => (
-                <div key={field.name} className="w-full">
-                  {field.label && (
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      {field.label}
-                    </label>
-                  )}
-
-                  {renderFieldControl(field)}
-                </div>
-              ))}
-
-              <Button
-                type="button"
-                className="w-full mt-4"
-                onClick={() => setMobileModalOpen(false)}
-              >
-                Filtrar
-              </Button>
-
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setMobileModalOpen(false)}
-                  className="mt-3 text-sm font-semibold text-slate-900"
-                >
-                  Voltar
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
+            )}
+            <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
               {fields.map((field) => (
-                <div key={field.name}>
+                <div key={field.name} className="flex-1 min-w-50 lg:min-w-62.5">
                   {field.label && (
                     <label className="block text-sm font-semibold text-slate-900 mb-2">
                       {field.label}
                     </label>
                   )}
 
-                  {renderFieldControl(field)}
+                  {field.type === "select" ? (
+                    <select
+                      value={values[field.name]}
+                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                    >
+                      <option value="" className="text-slate-500">
+                        {field.placeholder ?? "Selecione..."}
+                      </option>
+                      {field.options?.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === "multiselect" ? (
+                    <MultiSelect
+                      value={values[field.name] ?? ""}
+                      options={field.options?.filter((o) => o.value !== "") ?? []}
+                      placeholder={field.placeholder}
+                      onChange={(value) => handleChange(field.name, value)}
+                    />
+                  ) : field.type === "custom" && field.renderCustom ? (
+                    field.renderCustom({
+                      value: values[field.name] ?? "",
+                      onChange: (value) => handleChange(field.name, value),
+                    })
+                  ) : (
+                    <input
+                      type={field.type ?? "text"}
+                      placeholder={field.placeholder}
+                      value={values[field.name]}
+                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                    />
+                  )}
                 </div>
               ))}
+
               {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={handleClear}
                   title="Limpar filtros"
-                  className="flex p-1 items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50"
+                  className="self-end flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
                 >
-                  Limpar Filtros
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </div>
-          )}
+          </div>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 }
